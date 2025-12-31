@@ -10,7 +10,7 @@ const PORT = 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Connect to MongoDB (Make sure your URL is correct)
+// Connect to MongoDB
 // 'mongo' is the service name defined in your docker-compose.yml
 mongoose.connect('mongodb://mongo:27017/styledSalon', {
   useNewUrlParser: true,
@@ -19,24 +19,27 @@ mongoose.connect('mongodb://mongo:27017/styledSalon', {
 .then(() => console.log('MongoDB Connected'))
 .catch(err => console.log(err));
 
-// --- THE FIX IS HERE (Schema) ---
+// --- SCHEMA DEFINITION ---
 const appointmentSchema = new mongoose.Schema({
   clientName: String,
   email: String,
   service: String,
   date: Date,
-  time: String, // <--- We added this!
-  status: { type: String, default: 'Pending' } // <--- Default status
+  time: String, 
+  status: { type: String, default: 'Pending' }
 });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 
-// Routes
+// --- ROUTES ---
 
-// 1. GET all appointments
+// 1. GET all appointments (Sorted by Date & Time)
 app.get('/api/appointments', async (req, res) => {
   try {
-    const appointments = await Appointment.find();
+    // MODIFICATION HERE:
+    // .sort({ date: 1, time: 1 }) -> 1 means Ascending (Oldest/Earliest first)
+    const appointments = await Appointment.find().sort({ date: 1, time: 1 });
+    
     res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -45,7 +48,7 @@ app.get('/api/appointments', async (req, res) => {
 
 // 2. POST (Create) a new appointment
 app.post('/api/appointments', async (req, res) => {
-  // We extract 'time' from the request now
+  // Extracting data from the client request
   const { name, email, service, date, time } = req.body; 
 
   const newAppointment = new Appointment({
@@ -53,8 +56,8 @@ app.post('/api/appointments', async (req, res) => {
     email,
     service,
     date,
-    time, // <--- Saving the time to DB
-    status: 'Confirmed' // <--- CHANGE THIS to 'Pending' if you want approval process
+    time, 
+    status: 'Confirmed' // Changed to 'Confirmed' per your snippet (change to 'Pending' if needed)
   });
 
   try {
@@ -65,5 +68,5 @@ app.post('/api/appointments', async (req, res) => {
   }
 });
 
-//start the server
+// Start the server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
