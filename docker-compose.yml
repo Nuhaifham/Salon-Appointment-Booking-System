@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Database Service
+  mongo:
+    image: mongo:latest
+    ports:                  # <--- ADDED THIS SECTION
+      - "27017:27017"       # <--- Maps container port 27017 to localhost:27017
+    volumes:
+      - mongo-data:/data/db
+
+  # Backend Service
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/salon
+    depends_on:
+      - mongo
+
+  # Frontend Service (Running React Dev Server)
+  frontend:
+    build: ./frontend
+    stdin_open: true # Required for react-scripts
+    ports:
+      - "3000:3000"
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  mongo-data:
